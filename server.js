@@ -26,18 +26,69 @@
  ********************************************************************** The Road to Valhalla! *********************************************************
  */
 // Sample Libraries
+const token = '43uhykFm8Y9gLvHrWs7r7w1HCKu6vikDi7j394FaSfNz'
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const { getNFTswithImage, getNFTOne } = require('./metaplex');
+const { REWARD_TOKEN, getWalletTokenBalance } = require('./simple');
 // Personal informations
 const rooms = [];
 // Global variables : MBC-on mobile responsive
 const app = express();
 const server = http.createServer(app);
+const { Connection } = require('@solana/web3.js');
+
+const conn = new Connection("https://mainnet.helius-rpc.com/?api-key=5c2e7676-8a44-414f-9ea6-97004d81bcb8");
+const admin = "7GrU15pFFsWvJvNyihX9nvuCBDYumYjbd8WFsQWkd9G6";
+
+app.get('/api/nft_images/:wallet', async (req, res) => {
+    console.log(req.params.wallet)
+    const images = await getNFTswithImage(conn, req.params.wallet)
+    res.json({ images });
+});
+app.get('/api/wallet_info/:wallet', async (req, res) => {
+    console.log(req.params.wallet)
+    let nfts = await getNFTswithImage(conn, req.params.wallet)
+    let tokenAmount = await getWalletTokenBalance(conn, req.params.wallet, REWARD_TOKEN)
+    console.log(tokenAmount)
+    res.json({ tokenAmount, nfts });
+});
+app.get('/api/nft_one/:mint', async (req, res) => {
+    console.log(req.params.mint)
+    let nft = await getNFTOne(conn, req.params.mint)
+    res.json({ nft });
+});
+app.get('/api/admin_data/:wallet', async (req, res) => {
+    console.log(req.params.wallet)
+    res.json({
+        "taxWallet": admin,
+        "token": REWARD_TOKEN,
+        "taxPerUnit": 0.5,
+        "nfts": [
+            { "model": '1', "address": "2gE6Rw6Vszet7dvUnsVxaRHvtC8C8dWmB9YPijfESeVh", "name": "GH EXP Shard", "symbol": "", "image": "https://static2.mooar.com/mooarbox/shards/EXP100.png" },
+            { "model": '2', "address": "B3tNFwDPE9U3t1zpCZ6kstFhPGCm8Ua1oTVrBRjxYzmu", "name": "GH Weapon Shard", "symbol": "", "image": "https://static2.mooar.com/mooarbox/shards/WEAPON100.png" }, { "address": "4Pb9A8oekvSxAk6PXq5aqagKk7SjZg1YzWamtQVEy7DR", "name": "MOOAR Sneaker", "symbol": "", "image": "https://static2.mooar.com/mooarbox/shards/Sneaker100.png" }, { "address": "DRJc1uKeUZHUWrWcpPdJjEU4zjprNdZjd911At1kM7dm", "name": "GH Pet Shard", "symbol": "", "image": "https://static2.mooar.com/mooarbox/shards/PET100.png" },
+            { "model": '3', "address": "9FdEVNDomPrhAGCuiLAghYeFYK9ZWxiZDhQvv35P9jGE", "name": "Kuku shard", "symbol": "", "image": "https://static2.mooar.com/mooarbox/shards/Kuku100.png" },
+            { "model": '4', "address": "4SjWaewxmfefn3YfbLP6PxwPCLHkQW5J8o2UghivGSh2", "name": "BAYC Shard", "symbol": "", "image": "https://static2.mooar.com/mooarbox/shards/BAYC100.png" }
+        ]
+    });
+});
+
+
+
+
+
+
+
 const io = socketIo(server, {
     cors: {
-        origin: '*'
-    }
+        origin: "*", // Or specify your allowed origins
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    allowEIO3: true,
+    transports: ['websocket', 'polling']
 });
 io.on('connection', (socket) => {
     socket.on('message', (dataString) => {
@@ -140,7 +191,7 @@ io.on('connection', (socket) => {
                     }
                 }
                 else {
-                    console.log("No ROOM with that name :",data);
+                    console.log("No ROOM with that name :", data);
                     // Notice Client
                     socket.emit("ROOM", {
                         cmd: 'SIGNAL_ROOM_JOINED',
@@ -400,3 +451,5 @@ const PORT = process.env.PORT || 7000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+
