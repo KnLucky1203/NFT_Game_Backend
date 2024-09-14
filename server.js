@@ -25,15 +25,34 @@
  *                                                                                                                                                     *
  ********************************************************************** The Road to Valhalla! *********************************************************
  */
-// Sample Libraries
-const token = '43uhykFm8Y9gLvHrWs7r7w1HCKu6vikDi7j394FaSfNz'
 
+// Sample Libraries
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const { getNFTswithImage, getNFTOne } = require('./metaplex');
 const { REWARD_TOKEN, getWalletTokenBalance } = require('./simple');
+
+// --- DB ---
+const { db_init } = require("./db/db.js");
+const User = require("./db/User.js");
+const PVE = require("./db/PVE.js");
+const PVP = require("./db/PVP.js");
+const NFT = require("./db/NFT.js");
+const Room = require("./db/NFT.js");
+db_init();
+
+
+
+
+
+
+
+const token = '43uhykFm8Y9gLvHrWs7r7w1HCKu6vikDi7j394FaSfNz'
+const admin = "7GrU15pFFsWvJvNyihX9nvuCBDYumYjbd8WFsQWkd9G6";
+
 // Personal informations
+
 const rooms = [];
 // Global variables : MBC-on mobile responsive
 const app = express();
@@ -41,7 +60,6 @@ const server = http.createServer(app);
 const { Connection } = require('@solana/web3.js');
 
 const conn = new Connection("https://mainnet.helius-rpc.com/?api-key=5c2e7676-8a44-414f-9ea6-97004d81bcb8");
-const admin = "7GrU15pFFsWvJvNyihX9nvuCBDYumYjbd8WFsQWkd9G6";
 
 app.get('/api/nft_images/:wallet', async (req, res) => {
     console.log(req.params.wallet)
@@ -52,8 +70,9 @@ app.get('/api/wallet_info/:wallet', async (req, res) => {
     console.log(req.params.wallet)
     let nfts = await getNFTswithImage(conn, req.params.wallet)
     let tokenAmount = await getWalletTokenBalance(conn, req.params.wallet, REWARD_TOKEN)
-    console.log(tokenAmount)
-    res.json({ tokenAmount, nfts });
+    let rlt = { isAdmin: admin == req.params.wallet, tokenAmount, nfts };
+    console.log(rlt);
+    res.json(rlt);
 });
 app.get('/api/nft_one/:mint', async (req, res) => {
     console.log(req.params.mint)
@@ -74,12 +93,9 @@ app.get('/api/admin_data/:wallet', async (req, res) => {
         ]
     });
 });
-
-
-
-
-
-
+app.post('/api/add_new_token', async (req, res) => {
+    res.json({})
+})
 
 const io = socketIo(server, {
     cors: {
@@ -447,7 +463,7 @@ io.on('connection', (socket) => {
         }
     });
 });
-const PORT = process.env.PORT || 7000;
+const PORT = process.env.PORT || 7001;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
