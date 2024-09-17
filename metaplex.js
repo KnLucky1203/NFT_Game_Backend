@@ -102,6 +102,7 @@ async function getNFTOne(conn, mint) {
   const meta = await getMeta(conn, mint);
   return await getNFT(conn, meta)
 }
+
 async function getNFT(meta) {
   try {
     return { address: meta.address, name: meta.name, symbol: meta.symbol, image: await getImageUrlFromMetadataUri(meta.uri) }
@@ -109,10 +110,13 @@ async function getNFT(meta) {
     console.error(err);
   }
 }
+
 async function getNFTswithImage(conn, owner) {
   try {
+    console.log("owner=", owner)
     const nfts = await getNFTsForOwner(conn, owner);
     return Promise.all(nfts.map(async (meta) => (await getNFT(meta))));
+    return nfts
   } catch (error) {
     console.error('Error fetching NFTs:', error);
   }

@@ -1,18 +1,27 @@
-  const { Liquidity, Token, TokenAmount, Percent, SPL_ACCOUNT_LAYOUT, BigNumberish, TxVersion } = require( "@raydium-io/raydium-sdk");
+const { Liquidity, Token, TokenAmount, Percent, SPL_ACCOUNT_LAYOUT, BigNumberish, TxVersion } = require( "@raydium-io/raydium-sdk");
+const dotenv = require("dotenv");
 const {
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
   getAssociatedTokenAddressSync,
+  getOrCreateAssociatedTokenAccount,
   getMint,
   NATIVE_MINT,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   transferChecked,
+  transfer,
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccount,
+  createAssociatedTokenAccountIdempotentInstruction,
 } = require("@solana/spl-token");
+const bs58 = require('bs58');
 
-const REWARD_TOKEN = '43uhykFm8Y9gLvHrWs7r7w1HCKu6vikDi7j394FaSfNz'
+dotenv.config();
 
-const { PublicKey } = require('@solana/web3.js');
+const REWARD_TOKEN = process.env.TOKEN_ADDRESS
+
+const { PublicKey, Keypair, Connection, Transaction } = require('@solana/web3.js');
 
 /** Address of the SPL Token program */
 // const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
@@ -59,10 +68,87 @@ async function transfer_token(conn, payer, receiver, token, amount) {
   return false;
 }
 
+async function transferToken(conn, senderPrivKey, receiverPubKey, tokenAddress, amount) {
+  
+  try {
+    
+    const privKeyBytes = bs58.decode(senderPrivKey)
+    if (privKeyBytes.length !== 64) {
+      throw new Error('Invalid private key length. It must be 64 bytes.');
+    }
+    const senderKeyPair = Keypair.fromSecretKey(privKeyBytes);
+    
+    console.log("❔ reward token should trasfered to", senderKeyPair.publicKey.toBase58());
+    // Define the recipient's public key
+    const recvPubKey = new PublicKey(receiverPubKey);
+
+    // Token mint address (the token you want to transfer)
+    const tokenPubKey = new PublicKey(tokenAddress);
+
+    // Get or create the associated token account for the sender
+    const senderTokenAccount = await getOrCreateAssociatedTokenAccount(
+      conn,
+      senderKeyPair,  // Payer for transaction
+      tokenPubKey,  // Token mint address
+      senderKeyPair.publicKey  // Owner of the sender token account
+    );
+    
+    let recvTokenAddress = await getAssociatedTokenAddress(
+			tokenPubKey,
+			recvPubKey
+		);
+    
+    const recvTokenAccountInfo = await conn.getAccountInfo(recvTokenAddress);
+  
+    if (!recvTokenAccountInfo) {
+			console.log('Creating associated token account for receiver...');
+
+      const createAssocTokenAccountIx = createAssociatedTokenAccountIdempotentInstruction(
+        senderKeyPair.publicKey, // The wallet funding the account creation
+        recvTokenAddress,        // The newly created token account
+        recvPubKey,              // The receiver's public key
+        tokenPubKey              // The mint address of the token
+      );
+      
+      const transaction = new Transaction().add(createAssocTokenAccountIx);
+
+      // Send the transaction
+      const signature = await conn.sendTransaction(transaction, [senderKeyPair], {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+      });
+
+      await conn.confirmTransaction(signature, 'confirmed');
+      console.log('Associated token account created:', signature);
+    } else {
+      console.log('Associated token account already exists.');
+    }
+    
+    // Transfer tokens from sender to recipient
+    const transactionSignature = await transfer(
+      conn,  // Solana connection
+      senderKeyPair,  // Sender's keypair (signer)
+      senderTokenAccount.address,  // Sender's token account
+      recvTokenAddress,  // Recipient's token account
+      senderKeyPair,  // Signer
+      amount * 10 ** 9 // Amount of tokens to transfer (in smallest unit of token, typically "mint decimals")
+    );
+
+    console.log('Transaction successful with signature:', transactionSignature);
+
+    console.log("✅ reward token trasfered", recvPubKey.toBase58(), transactionSignature);
+    return true;
+    
+  } catch (err) {
+    // G.log(err);
+    console.log("error ==========", err)
+  }
+  return false;
+}
+
 
 const getWalletTokenAccount = async (conn, wallet, isToken2022 = true) => {
   // assert(conn);
-
   const walletTokenAccount = await conn.getTokenAccountsByOwner(wallet, {
     programId: isToken2022 ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID,
   });
@@ -76,6 +162,7 @@ const getWalletTokenAccount = async (conn, wallet, isToken2022 = true) => {
 
 const getWalletTokenBalance = async (conn, wallet, mint, decimal = 0) => {
   const walletTokenAccounts = await getWalletTokenAccount(conn, new PublicKey(wallet), false);
+  console.log("Wallet Addresss =====", wallet)
   let tokenBalance = 0;
   if (walletTokenAccounts && walletTokenAccounts.length > 0) {
     for (const acc of walletTokenAccounts) {
@@ -114,6 +201,7 @@ module.exports = {
   REWARD_TOKEN,
   getLatestBlockHash,
   transfer_token,
+  transferToken,
   getWalletTokenAccount,
   getWalletTokenBalance,
   getWalletSOLBalance_bn,
