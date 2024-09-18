@@ -182,7 +182,9 @@ io.on('connection', (socket) => {
                     map: data.map,
                     score1: 0,
                     score2: 0,
-                    amount: 1,
+                    amount: data.amount,
+                    deposit1: false,
+                    deposit2: false,
                 });
                 // console.log("rooms: ", rooms);
                 socket.emit('ROOM', {
@@ -288,6 +290,27 @@ io.on('connection', (socket) => {
                 if (index !== -1) {
                     const otherPlayer = io.sockets.sockets.get(rooms[index].player1_id);
                     otherPlayer.emit("ROOM", { cmd: "CLIENT_PLAY_AGAIN_APPROVED" });
+                }
+                break;
+            case "TOKEN_DEPOSITED":
+                if (data.role == 'server') {
+                    
+                    index = rooms.findIndex(room => room.name === socket.id);
+                    console.log("Request of TOKEN_DEPOSITED___________________:", socket.id);
+                    if (index !== -1) {
+                        otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
+                        rooms[index].deposit1 = true;
+                        otherPlayer.emit("ROOM", { cmd: "SERVER_DEPOSITED" });
+  
+                    }                    
+                }
+                if (data.role == 'client') {
+                    index = rooms.findIndex(room => room.player2_id === socket.id);
+                    if (index !== -1) {
+                        otherPlayer = io.sockets.sockets.get(rooms[index].player1_id);
+                        rooms[index].deposit2 = true;
+                        otherPlayer.emit("ROOM",{cmd:"CLIENT_DEPOSITED"});
+                    }                    
                 }
                 break;
             case "ACTION_START_GAME":

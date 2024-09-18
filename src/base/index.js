@@ -15,6 +15,15 @@ const conn = web3.connection;
 router.get('/base/reward/rate', getRewardRate)
 router.get('/base/character', getCharacter)
 router.get('/base/nfts', getNFTs)
+router.get('/base/deposit/address', (req, res) => {
+    res.json({ code: '00', 
+        data: {
+            depositAddress: process.env.ADMIN_WALLET, 
+            tokenAddress: process.env.TOKEN_ADDRESS 
+        }, 
+        message: null}
+    )
+})
 
 async function getRewardRate(req, res, next){
     try {

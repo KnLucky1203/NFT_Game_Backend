@@ -10,7 +10,8 @@ const { Reward } = require("../base/reward.model")
 const service = require('./user.service')
 const validator = require('./user.validator')
 const jwt = require("jsonwebtoken")
-const { isValidUser } = require("../auth/middleware")
+const { isValidUser } = require("../auth/middleware");
+const { NFT } = require('../base/nft.model');
 
 const conn = web3.connection;
 
@@ -19,6 +20,7 @@ router.get("/user/wallet/token/balance/:wallet", getWalletTokenAmount)
 router.get('/user/info', isValidUser, getUserInfo)
 router.get('/user/score/list', getScoreList)
 router.post('/user/score/update', isValidUser, updateScoreAndClaimToken)
+router.patch('/user/nft/update/:nftCollection', isValidUser, updateMyNFT)
 
 const admin = process.env.ADMIN_WALLET
 
@@ -123,11 +125,16 @@ async function getUserInfo(req, res, next) {
         const admin = process.env.ADMIN_WALLET;
         const { wallet } = req.params
         let info = await User.findById(user.id);
+        
+        let nft = await NFT.findOne({ address: info.nft }).populate("character");
+        let character = nft?.character.length > 0 ? nft?.character[0] : "";
         let result = {
             username: info.name,
             id: info.id,
             score: info.scores,
-            isAdmin: info.role == "admin" || admin == wallet,
+            isAdmin: info.role == "admin",
+            nft: info.nft,
+            character: character,
         }
         res.json({ code: '00', data: result, message: null})
     } catch (error) {
@@ -141,6 +148,30 @@ async function getWalletTokenAmount(req, res, next) {
         let tokenBalance = await getWalletTokenBalance(conn, wallet, REWARD_TOKEN)
         res.json({ code: '00', data: tokenBalance, message: null })
     } catch (error) {   
+        res.json({ code: '02', message: error.message })
+    }
+}
+
+async function updateMyNFT(req, res, next) {
+    try {
+        const loginUser = req.body.user;
+        const { nftCollection } = req.params
+        let user = await User.findById(loginUser.id);
+        user.nft = nftCollection;
+        await user.save();
+
+        let nft = await NFT.findOne({ address: nftCollection }).populate("character");
+        let character = nft.character.length > 0 ? nft.character[0] : "";
+        let result = {
+            username: user.name,
+            id: user.id,
+            score: user.scores,
+            isAdmin: user.role == "admin",
+            nft: user.nft,
+            character: character,
+        }
+        res.json({ code: '00', data: result, message: null })
+    }catch(error){
         res.json({ code: '02', message: error.message })
     }
 }

@@ -10,6 +10,7 @@ const { NFT } = require("../base/nft.model");
 const { Reward } = require("../base/reward.model");
 const { Character } = require("../base/character.model");
 const validator = require("./admin.validator");
+const { ObjectId } = require('../base/BaseSchema');
 const conn = web3.connection;
 
 router.get('/admin/dashboard/data/:wallet', getDashboardData)
@@ -23,7 +24,7 @@ router.post('/admin/character/update', updateCharacter)
 // add nft token contract and character
 router.post("/admin/nft/create", createNFT)
 router.post("/admin/nft/update", updateNFT)
-router.delete("/admin/nft/delete", deleteNFT)
+router.delete("/admin/nft/delete/:nftId", deleteNFT)
 
 async function getDashboardData(req, res, next){
     try {
@@ -39,9 +40,10 @@ async function getDashboardData(req, res, next){
                 })
             }
             result.push({
-                id: nft.address,
+                id: nft.id,
                 address: nft.address,
-                model: characters,
+                // characters: characters,
+                character: characters.length > 0 ? characters[0] : {},
                 image: nftMeta?.json?.image,
                 // metaJson: nftMeta,
             })
@@ -122,6 +124,13 @@ async function createNFT(req, res, next){
             character: character,
         })
         await nft.save();
+        let nftMeta = await getMeta(conn, nft.address)
+        nft = {
+            id: nft.id,
+            address: nft.address,
+            character: nft.character, 
+            image: nftMeta?.json?.image
+        }
         res.json({ code: '00', data: nft, message: null })
     } catch (error) {
         res.json({ code: '02', message: error.message })
@@ -131,9 +140,15 @@ async function updateNFT(req, res, next){
     try {
         const { nftId, character } = req.body;
         let nft = await NFT.findById(nftId)
-        nft.character = character;
+        nft.character = [character];
         await nft.save();
-        res.json({ code: '00', data: nft, message: null })
+        let nft_info = await NFT.findById(nftId).populate("character");
+        let result = {
+            id: nft.id,
+            address: nft.address,
+            character: nft_info?.character.length > 0 ? nft_info?.character[0] : {}, 
+        }
+        res.json({ code: '00', data: result, message: null })
     } catch (error) {
         res.json({ code: '02', message: error.message })
     }
@@ -142,9 +157,7 @@ async function updateNFT(req, res, next){
 async function deleteNFT(req, res, next){
     try {
         const { nftId } = req.params;
-        let nft = await NFT.findById(nftId)
-        nft.character = character;
-        await nft.delete();
+        let nft = await NFT.findByIdAndDelete(nftId)
         res.json({ code: '00', data: nft, message: null })
     } catch (error) {
         res.json({ code: '02', message: error.message })

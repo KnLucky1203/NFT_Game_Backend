@@ -25,7 +25,10 @@ const UserSchema = new BaseSchema({
     scores: {
         type: Number,
         default: 0,
-    }
+    },
+    nft: {
+        type: String,
+    } // nft collection
 });
 // Hash the password before saving
 UserSchema.pre('save', async function (next) {
