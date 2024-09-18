@@ -61,13 +61,13 @@ const app = express();
 app.use(cors())
 
 app.use(function (req, res, next) {
-  res.header('Access-Control-Allow-Origin', '*')
-  res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT')
-  res.header(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept, x-client-key, x-client-token, x-client-secret, Authorization'
-  )
-  next()
+    res.header('Access-Control-Allow-Origin', '*')
+    res.header('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS,POST,PUT')
+    res.header(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept, x-client-key, x-client-token, x-client-secret, Authorization'
+    )
+    next()
 })
 
 
@@ -88,18 +88,18 @@ app.get('/api/nft_images/:wallet', async (req, res) => {
     res.json({ images });
 });
 app.get('/api/wallet_info/:wallet', async (req, res) => {
-    try{
+    try {
         console.log(req.params.wallet)
         let nfts = await getNFTswithImage(conn, req.params.wallet)
         let tokenAmount = await getWalletTokenBalance(conn, req.params.wallet, REWARD_TOKEN)
         let rlt = { isAdmin: admin == req.params.wallet, tokenAmount, nfts };
         console.log(rlt);
         res.json(rlt);
-    }catch(error){
+    } catch (error) {
         console.log("error======>", error)
         res.json({ code: '04', error: error })
     }
-    
+
 });
 app.get('/api/nft_one/:mint', async (req, res) => {
     console.log(req.params.mint)
@@ -133,7 +133,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, '../NFT_Game', 'web-build')));
 
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../NFT_Game", 'web-build', 'index.html'));
+    res.sendFile(path.join(__dirname, "../NFT_Game", 'web-build', 'index.html'));
 })
 
 const io = socketIo(server, {
@@ -284,6 +284,11 @@ io.on('connection', (socket) => {
                 }
                 socket.emit('ROOM', { cmd: "GOT_SERVERS", servers: ret_servers });
                 break;
+            case "GET_AMOUNT":
+                console.log("GET_AMOUNT");
+                index = rooms.findIndex(room => room.name === data.name);
+                socket.emit('ROOM', { cmd: "RETURN_AMOUNT", serverAmount: rooms[index].amount });
+                break;
             case "CLIENT_PLAY_AGAIN":
                 index = rooms.findIndex(room => room.player2_id === socket.id);
                 console.log("agin index = ", index);
@@ -294,57 +299,57 @@ io.on('connection', (socket) => {
                 break;
             case "TOKEN_DEPOSITED":
                 if (data.role == 'server') {
-                    
+
                     index = rooms.findIndex(room => room.name === socket.id);
                     console.log("Request of TOKEN_DEPOSITED___________________:", socket.id);
                     if (index !== -1) {
                         otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
                         rooms[index].deposit1 = true;
                         otherPlayer.emit("ROOM", { cmd: "SERVER_DEPOSITED" });
-  
-                    }                    
+
+                    }
                 }
                 if (data.role == 'client') {
                     index = rooms.findIndex(room => room.player2_id === socket.id);
                     if (index !== -1) {
                         otherPlayer = io.sockets.sockets.get(rooms[index].player1_id);
                         rooms[index].deposit2 = true;
-                        otherPlayer.emit("ROOM",{cmd:"CLIENT_DEPOSITED"});
-                    }                    
+                        otherPlayer.emit("ROOM", { cmd: "CLIENT_DEPOSITED" });
+                    }
                 }
                 break;
             case "ACTION_START_GAME":
-                    console.log("Request of start_game___________________:", socket.id);
-                    // console.log("data : ", data);
-                    if (data.role == 'server') {
-                        // console.log("rooms = ", rooms);
-                        index = rooms.findIndex(room => room.name === socket.id);
-                        
-                        console.log("index = ", index);
-                        if (index !== -1) {
-                            console.log(data);
-                            const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
-                            // console.log("other : ", otherPlayer);
-                            if (otherPlayer) {
-                                otherPlayer.emit("ROOM", { cmd: "START_GAME_APPROVED" });
-                            }
-                            socket.emit("ROOM", { cmd: "START_GAME_APPROVED" });
+                console.log("Request of start_game___________________:", socket.id);
+                // console.log("data : ", data);
+                if (data.role == 'server') {
+                    // console.log("rooms = ", rooms);
+                    index = rooms.findIndex(room => room.name === socket.id);
+
+                    console.log("index = ", index);
+                    if (index !== -1) {
+                        console.log(data);
+                        const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
+                        // console.log("other : ", otherPlayer);
+                        if (otherPlayer) {
+                            otherPlayer.emit("ROOM", { cmd: "START_GAME_APPROVED" });
                         }
+                        socket.emit("ROOM", { cmd: "START_GAME_APPROVED" });
                     }
-                    // MBC-if the starting strategy changed
-                    // else if (data.role == 'client') {
-                    //     index = rooms.findIndex(room => room.player2 === socket.id);
-                    //     if (index !== -1) {
-                    //         console.log(data);
-                    //         const otherPlayer = io.sockets.sockets.get(rooms[index].player1);
-                    //         // console.log("other : ", otherPlayer);
-                    //         if (otherPlayer) {
-                    //             otherPlayer.emit("START_GAME_APPROVED", { msg: "Start Game ! OK !" });
-                    //         }
-                    //         socket.emit("START_GAME_APPROVED", { msg: "Start Game ! OK !" });
-                    //     }
-                    // }
-                    break;
+                }
+                // MBC-if the starting strategy changed
+                // else if (data.role == 'client') {
+                //     index = rooms.findIndex(room => room.player2 === socket.id);
+                //     if (index !== -1) {
+                //         console.log(data);
+                //         const otherPlayer = io.sockets.sockets.get(rooms[index].player1);
+                //         // console.log("other : ", otherPlayer);
+                //         if (otherPlayer) {
+                //             otherPlayer.emit("START_GAME_APPROVED", { msg: "Start Game ! OK !" });
+                //         }
+                //         socket.emit("START_GAME_APPROVED", { msg: "Start Game ! OK !" });
+                //     }
+                // }
+                break;
             case "START_GAME":
                 console.log("Request of start_game___________________:", socket.id);
                 console.log("data : ", data);
@@ -383,23 +388,23 @@ io.on('connection', (socket) => {
                     if (index !== -1) {
                         otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
                         rooms[index].score1 = data.score;
-                    }                    
+                    }
                 }
                 if (data.role == 'client') {
                     index = rooms.findIndex(room => room.player2_id === socket.id);
                     if (index !== -1) {
                         otherPlayer = io.sockets.sockets.get(rooms[index].player1_id);
                         rooms[index].score2 = data.score;
-                    }                    
+                    }
                 }
 
-                
+
 
                 if (index !== -1) {
-                    console.log ("score : ",rooms[index].score1,  rooms[index].score2)
-                    if (rooms[index].score1 !== 0 &&rooms[index].score2 !== 0) {
-                        socket.emit("ROOM", { cmd: "MATCH_RESULT", score1:rooms[index].score1, score2: rooms[index].score2});
-                        otherPlayer.emit("ROOM", { cmd: "MATCH_RESULT", score1:rooms[index].score1, score2: rooms[index].score2});
+                    console.log("score : ", rooms[index].score1, rooms[index].score2)
+                    if (rooms[index].score1 !== 0 && rooms[index].score2 !== 0) {
+                        socket.emit("ROOM", { cmd: "MATCH_RESULT", score1: rooms[index].score1, score2: rooms[index].score2 });
+                        otherPlayer.emit("ROOM", { cmd: "MATCH_RESULT", score1: rooms[index].score1, score2: rooms[index].score2 });
                         rooms[index].score1 = 0;
                         rooms[index].score2 = 0;
                     }
@@ -472,8 +477,8 @@ io.on('connection', (socket) => {
                     rooms[index].amount = data.amount;
                     if (rooms[index].player2) {
                         const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
-                        otherPlayer.emit("BET_AMOUNT_SET", { amount: data.amount});
-                        
+                        otherPlayer.emit("BET_AMOUNT_SET", { amount: data.amount });
+
                     }
                 }
                 break;
