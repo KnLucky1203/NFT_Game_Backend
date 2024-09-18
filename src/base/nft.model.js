@@ -8,7 +8,9 @@ const NFTSchema = new BaseSchema({
         unique: true,
     }, // nft mint address
     character: {
-        
+        type: [ mongoose.Schema.Types.ObjectId ],
+        ref: "character",
+        require: true
     }
 });
 

@@ -4,13 +4,13 @@ const BaseSchema  = require("./BaseSchema")
 const CharacterSchema = new BaseSchema({
     address: {
         type: String,
-        unique: true,
     }, // NFT Contract Address
     name: {
         type: String
     }, // brent, bacon, 
     symbol: {
         type: String,
+        unique: true,
     }, // brent: @BouncyBrent, bacon: @BouncyBacon
     image: {
         type: String

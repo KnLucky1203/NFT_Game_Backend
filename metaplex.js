@@ -23,7 +23,8 @@ async function getMeta(conn, token) {
         mintAddress: token,
         mint: meta.mint,
         updateAuthorityAddress: meta.updateAuthorityAddress.toBase58(),
-        json: meta.json ? JSON.stringify(meta.json) : "",
+        // json: meta.json ? JSON.stringify(meta.json) : "",
+        json: meta.json,
         jsonLoaded: meta.jsonLoaded,
         name: meta.name,
         symbol: meta.symbol,
@@ -105,7 +106,7 @@ async function getNFTOne(conn, mint) {
 
 async function getNFT(meta) {
   try {
-    return { address: meta.address, name: meta.name, symbol: meta.symbol, image: await getImageUrlFromMetadataUri(meta.uri) }
+    return { address: meta.address, name: meta.name, symbol: meta.symbol, collection: meta?.collection.address, image: await getImageUrlFromMetadataUri(meta.uri) }
   } catch (err) {
     console.error(err);
   }
@@ -116,12 +117,11 @@ async function getNFTswithImage(conn, owner) {
     console.log("owner=", owner)
     const nfts = await getNFTsForOwner(conn, owner);
     return Promise.all(nfts.map(async (meta) => (await getNFT(meta))));
-    return nfts
+    // return nfts
   } catch (error) {
     console.error('Error fetching NFTs:', error);
   }
 }
-
 
 module.exports = {
   getMeta,

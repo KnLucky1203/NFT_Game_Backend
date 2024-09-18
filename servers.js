@@ -128,6 +128,13 @@ app.use("/api/v1", auth);
 app.use("/api/v1", base);
 app.use("/api/v1", adminRouter);
 
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(express.static(path.join(__dirname, '../NFT_Game', 'web-build')));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../NFT_Game", 'web-build', 'index.html'));
+})
 
 const io = socketIo(server, {
     cors: {
@@ -148,6 +155,7 @@ io.on('connection', (socket) => {
                 player1: cUserName,
                 map: globalMap
             */
+
             case "ACTION_CREATE_ROOM":
                 // Add room information to the rooms array
                 // Name : ROOM_Name : socket.id is the room name for the test
@@ -174,6 +182,7 @@ io.on('connection', (socket) => {
                     map: data.map,
                     score1: 0,
                     score2: 0,
+                    amount: 1,
                 });
                 // console.log("rooms: ", rooms);
                 socket.emit('ROOM', {
@@ -219,6 +228,7 @@ io.on('connection', (socket) => {
                                 name: rooms[index].name,
                                 globalMap: rooms[index].map,
                                 role: 'server',
+                                amount: rooms[index].amount,
                                 players: [
                                     { player_name: rooms[index].player1, player_id: rooms[index].player1_id, player_state: 1 },
                                     { player_name: rooms[index].player2, player_id: rooms[index].player2_id, player_state: 1 }
@@ -232,6 +242,7 @@ io.on('connection', (socket) => {
                             cmd: 'SIGNAL_ROOM_JOINED',
                             globalMap: rooms[index].map,
                             role: 'client',
+                            amount: rooms[index].amount,
                             players: [
                                 { player_name: rooms[index].player1, player_id: rooms[index].player1_id, player_state: 1 },
                                 { player_name: rooms[index].player2, player_id: rooms[index].player2_id, player_state: 1 }
@@ -270,6 +281,14 @@ io.on('connection', (socket) => {
                     ret_servers.push(cur);
                 }
                 socket.emit('ROOM', { cmd: "GOT_SERVERS", servers: ret_servers });
+                break;
+            case "CLIENT_PLAY_AGAIN":
+                index = rooms.findIndex(room => room.player2_id === socket.id);
+                console.log("agin index = ", index);
+                if (index !== -1) {
+                    const otherPlayer = io.sockets.sockets.get(rooms[index].player1_id);
+                    otherPlayer.emit("ROOM", { cmd: "CLIENT_PLAY_AGAIN_APPROVED" });
+                }
                 break;
             case "ACTION_START_GAME":
                     console.log("Request of start_game___________________:", socket.id);
@@ -351,9 +370,10 @@ io.on('connection', (socket) => {
                     }                    
                 }
 
-                console.log ("score : ",rooms[index].score1,  rooms[index].score2)
+                
 
                 if (index !== -1) {
+                    console.log ("score : ",rooms[index].score1,  rooms[index].score2)
                     if (rooms[index].score1 !== 0 &&rooms[index].score2 !== 0) {
                         socket.emit("ROOM", { cmd: "MATCH_RESULT", score1:rooms[index].score1, score2: rooms[index].score2});
                         otherPlayer.emit("ROOM", { cmd: "MATCH_RESULT", score1:rooms[index].score1, score2: rooms[index].score2});
@@ -396,11 +416,11 @@ io.on('connection', (socket) => {
             case "MOVE_PERSON":
                 if (data.role == 'server') {
                     index = rooms.findIndex(room => room.name === socket.id);
-                    console.log("GOOD!!!", data);
-                    console.log({ direction: data.direction, role: data.role, align: data.align });
+                    // console.log("GOOD!!!", data);
+                    // console.log({ direction: data.direction, role: data.role, align: data.align });
                     let opRole = data.role == 'server' ? 'client' : 'server';
                     if (index != -1) {
-                        socket.emit("MOVE_PERSON_APPROVED", { direction: data.direction, role: data.role, align: data.align });
+                        // socket.emit("MOVE_PERSON_APPROVED", { direction: data.direction, role: data.role, align: data.align });
                         if (rooms[index].player2) {
                             const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
                             otherPlayer.emit("MOVE_PERSON_APPROVED", { direction: data.direction, role: opRole, align: data.align });
@@ -410,11 +430,11 @@ io.on('connection', (socket) => {
                 } else if (data.role == 'client') {
                     // index of the second player
                     index = rooms.findIndex(room => room.player2_id === socket.id);
-                    console.log("GOOD!!!", data);
-                    console.log({ direction: data.direction, role: data.role, align: data.align });
+                    // console.log("GOOD!!!", data);
+                    // console.log({ direction: data.direction, role: data.role, align: data.align });
                     let opRole = data.role == 'server' ? 'client' : 'server';
                     if (index != -1) {
-                        socket.emit("MOVE_PERSON_APPROVED", { direction: data.direction, role: data.role, align: data.align });
+                        // socket.emit("MOVE_PERSON_APPROVED", { direction: data.direction, role: data.role, align: data.align });
                         if (rooms[index].player2) {
                             const otherPlayer = io.sockets.sockets.get(rooms[index].player1_id);
                             otherPlayer.emit("MOVE_PERSON_APPROVED", { direction: data.direction, role: opRole, align: data.align });
@@ -423,7 +443,17 @@ io.on('connection', (socket) => {
                     }
                 }
                 break;
-
+            case "SET_BET_AMOUNT":
+                index = rooms.findIndex(room => room.name === socket.id);
+                if (index != -1) {
+                    rooms[index].amount = data.amount;
+                    if (rooms[index].player2) {
+                        const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
+                        otherPlayer.emit("BET_AMOUNT_SET", { amount: data.amount});
+                        
+                    }
+                }
+                break;
             case "MOVE_PERSON":
                 index = rooms.findIndex(room => room.name === socket.id);
                 console.log("Let's move : ", data);

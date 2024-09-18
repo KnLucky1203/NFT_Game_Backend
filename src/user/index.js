@@ -15,6 +15,7 @@ const { isValidUser } = require("../auth/middleware")
 const conn = web3.connection;
 
 router.get('/user/wallet_info/:wallet', getWalletInfo)
+router.get("/user/wallet/token/balance/:wallet", getWalletTokenAmount)
 router.get('/user/info', isValidUser, getUserInfo)
 router.get('/user/score/list', getScoreList)
 router.post('/user/score/update', isValidUser, updateScoreAndClaimToken)
@@ -119,14 +120,27 @@ async function updateScoreAndClaimToken(req, res, next) {
 async function getUserInfo(req, res, next) {
     try {
         const user = req.body.user;
+        const admin = process.env.ADMIN_WALLET;
+        const { wallet } = req.params
         let info = await User.findById(user.id);
         let result = {
             username: info.name,
             id: info.id,
-            score: info.scores
+            score: info.scores,
+            isAdmin: info.role == "admin" || admin == wallet,
         }
         res.json({ code: '00', data: result, message: null})
     } catch (error) {
+        res.json({ code: '02', message: error.message })
+    }
+}
+
+async function getWalletTokenAmount(req, res, next) {
+    try {
+        const { wallet } = req.params;
+        let tokenBalance = await getWalletTokenBalance(conn, wallet, REWARD_TOKEN)
+        res.json({ code: '00', data: tokenBalance, message: null })
+    } catch (error) {   
         res.json({ code: '02', message: error.message })
     }
 }

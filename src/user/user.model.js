@@ -18,6 +18,10 @@ const UserSchema = new BaseSchema({
     name: String,
     password: String,
     wallets: [ String ],
+    role: {
+        type: String,
+        default: "user" // role: "admin", "user", ...
+    },
     scores: {
         type: Number,
         default: 0,
