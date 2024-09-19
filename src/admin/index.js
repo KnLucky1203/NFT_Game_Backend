@@ -11,20 +11,22 @@ const { Reward } = require("../base/reward.model");
 const { Character } = require("../base/character.model");
 const validator = require("./admin.validator");
 const { ObjectId } = require('../base/BaseSchema');
+const { isValidAdmin } = require('../auth/middleware');
+
 const conn = web3.connection;
 
-router.get('/admin/dashboard/data/:wallet', getDashboardData)
+router.get('/admin/dashboard/data/:wallet', isValidAdmin, getDashboardData)
 
 router.post('/admin/reward/rate', setRewardRate)
-router.patch('/admin/reward/rate', updateRewardRate)
+router.patch('/admin/reward/rate', isValidAdmin, updateRewardRate)
 
 router.post('/admin/character/add', createCharacter)
 router.post('/admin/character/update', updateCharacter)
 
 // add nft token contract and character
-router.post("/admin/nft/create", createNFT)
-router.post("/admin/nft/update", updateNFT)
-router.delete("/admin/nft/delete/:nftId", deleteNFT)
+router.post("/admin/nft/create", isValidAdmin, createNFT)
+router.post("/admin/nft/update", isValidAdmin, updateNFT)
+router.post("/admin/nft/delete", isValidAdmin, deleteNFT)
 
 async function getDashboardData(req, res, next){
     try {
@@ -76,9 +78,18 @@ async function setRewardRate(req, res, next) {
 async function updateRewardRate(req, res, next) {
     try {
         const { rate, mode, id } = req.body;
-        let rateData = await Reward.findById(id);
-        rateData.rate = rate
-        await rateData.save()
+        let rateData;
+        if(id){
+            rateData = await Reward.findById(id);
+            rateData.rate = rate
+            await rateData.save()
+        }else{
+            rateData = new Reward({
+                rate: rate,
+                mode: "PVE",
+            })
+            await rateData.save();
+        }
         res.json({ code: '00', data: rateData, message: null})
     } catch (error) {
         res.json({ code: '03', message: error.message})
@@ -156,7 +167,7 @@ async function updateNFT(req, res, next){
 
 async function deleteNFT(req, res, next){
     try {
-        const { nftId } = req.params;
+        const { nftId } = req.body;
         let nft = await NFT.findByIdAndDelete(nftId)
         res.json({ code: '00', data: nft, message: null })
     } catch (error) {

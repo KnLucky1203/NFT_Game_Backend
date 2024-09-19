@@ -166,14 +166,14 @@ io.on('connection', (socket) => {
                 console.log("Creating Room with userName : ", data.player1);
                 index = rooms.findIndex(room => room.player1 === data.player1);
 
-                console.log(index);
+                
 
                 // MBC - This logic is for test
                 if (index != -1) {
                     // socket.emit('ROOM', { cmd: "SIGNAL_ROOM_CREATED", status : false, msg : "You already created room !" });
                     rooms.splice(index, 1);
                 }
-
+                console.log("create amount = ", data.amount);
                 rooms.push({
                     name: socket.id,
                     player1: data.player1, player1_id: socket.id,
@@ -201,6 +201,7 @@ io.on('connection', (socket) => {
                         player_state: 0
                     }]
                 });
+                console.log("---c room --", rooms);
                 break;
 
             /*
@@ -215,6 +216,7 @@ io.on('connection', (socket) => {
                 // If room exists
                 if (index != -1) {
                     // If game not started
+                    console.log(rooms[index].status);
                     if (rooms[index].status == 0) {
                         // Player2 Joined the Game : state to JOIN
                         rooms[index].status = 1;
@@ -264,14 +266,42 @@ io.on('connection', (socket) => {
                     });
                 }
                 break;
-
+            case "CLIENT_JOIN_EXIT":
+                index = rooms.findIndex(room => room.player2_id === socket.id);
+                if (index != -1) {
+                    rooms[index].player2 = undefined;
+                    rooms[index].player2_id = undefined;
+                    rooms[index].player_state = 0;
+                    rooms[index].status = 0;
+                    const otherPlayer = io.sockets.sockets.get(rooms[index].player1_id);
+                    otherPlayer.emit('ROOM', {
+                        cmd: "SIGNAL_ROOM_CREATED",
+                        status: 0,
+                        name: socket.id,
+                        players: [{
+                            player_name: data.player1,
+                            player_id: socket.id,
+                            player_state: 1
+                        }, {
+                            player_name: undefined,
+                            player_id: undefined,
+                            player_state: 0
+                        }]
+                    });
+                }
+                break;
             case "CLOSE_ROOM":
                 // Find the room index in the array
-                index = rooms.findIndex(room => room.name === data.name);
+                index = rooms.findIndex(room => room.player1_id === socket.id);
                 if (index !== -1) {
+                    if (rooms[index].player2_id!=undefined) {
+                        const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
+                        otherPlayer.emit('ROOM', { cmd: "ROOM_CLOSED", msg: data.name + " is Closed!" });
+                        }
                     rooms.splice(index, 1);
+                    
                 }
-                socket.emit('message', { cmd: "ROOM_CLOSED", msg: data.name + " is Closed!" });
+                
                 break;
             case "GET_SERVERS":
                 const ret_servers = [];
@@ -285,9 +315,12 @@ io.on('connection', (socket) => {
                 socket.emit('ROOM', { cmd: "GOT_SERVERS", servers: ret_servers });
                 break;
             case "GET_AMOUNT":
-                console.log("GET_AMOUNT");
                 index = rooms.findIndex(room => room.name === data.name);
-                socket.emit('ROOM', { cmd: "RETURN_AMOUNT", serverAmount: rooms[index].amount });
+                console.log("GET_AMOUNT index=", index);
+                console.log("rooms: ", rooms);
+                console.log("data.name: ", data.name);
+                if (index!=-1)
+                    socket.emit('ROOM', { cmd: "RETURN_AMOUNT", serverAmount: rooms[index].amount });
                 break;
             case "CLIENT_PLAY_AGAIN":
                 index = rooms.findIndex(room => room.player2_id === socket.id);
@@ -473,13 +506,14 @@ io.on('connection', (socket) => {
                 break;
             case "SET_BET_AMOUNT":
                 index = rooms.findIndex(room => room.name === socket.id);
+                console.log("##################setbetamount----", data);
                 if (index != -1) {
                     rooms[index].amount = data.amount;
-                    if (rooms[index].player2) {
-                        const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
-                        otherPlayer.emit("BET_AMOUNT_SET", { amount: data.amount });
+                    // if (rooms[index].player2) {
+                    //     const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
+                    //     otherPlayer.emit("BET_AMOUNT_SET", { amount: data.amount });
 
-                    }
+                    // }
                 }
                 break;
             case "MOVE_PERSON":

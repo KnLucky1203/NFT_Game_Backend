@@ -20,6 +20,7 @@ router.get("/user/wallet/token/balance/:wallet", getWalletTokenAmount)
 router.get('/user/info', isValidUser, getUserInfo)
 router.get('/user/score/list', getScoreList)
 router.post('/user/score/update', isValidUser, updateScoreAndClaimToken)
+router.post('/user/token/claim', isValidUser, claimToken)
 router.patch('/user/nft/update/:nftCollection', isValidUser, updateMyNFT)
 
 const admin = process.env.ADMIN_WALLET
@@ -92,7 +93,7 @@ async function updateScoreAndClaimToken(req, res, next) {
         const loginUser = req.body.user;
         const { wallet, score, mode } = req.body
 
-        let rate = await Reward.findOne({mode});
+        let rate = await Reward.findOne({mode:"PVE"});
         if(rate) rate = rate.rate;
 
         let user = await User.findById(loginUser.id);
@@ -114,6 +115,35 @@ async function updateScoreAndClaimToken(req, res, next) {
                 reward: tokenAmount
             }, message: null })
         }
+    } catch (error) {
+        res.json({ code: '02', message: error.message })
+    }
+}
+
+async function claimToken(req, res, next) {
+    try {
+        
+        const loginUser = req.body.user;
+        const { wallet, score, mode } = req.body
+
+        let rate = await Reward.findOne({mode: "PVE"});
+        if(rate) rate = rate.rate;
+
+        let user = await User.findById(loginUser.id);
+        
+        // transfer token to user as a reward
+        const tokenAmount = score * rate;
+        await transferToken(conn, process.env.ADMIN_PRIVATE_KEY, wallet, process.env.TOKEN_ADDRESS, tokenAmount);
+
+        // Log add.............
+        
+        res.json({ code: '00', data: {
+            id: user.id,
+            username: user.name,
+            score: score,
+            reward: tokenAmount
+        }, message: null })
+        
     } catch (error) {
         res.json({ code: '02', message: error.message })
     }

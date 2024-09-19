@@ -31,7 +31,7 @@ async function getRewardRate(req, res, next){
         let { mode } = req.query;
         mode = mode ? mode : "PVP"
         let rewards = await Reward.findOne({mode: mode});
-        res.json({code:'00', data: { rate: rewards.rate, id: rewards.id }, message: null})
+        res.json({code:'00', data: { rate: rewards?.rate, id: rewards?.id }, message: null})
     } catch(err) {
         res.json({code: '02', message: err.message});
     }
