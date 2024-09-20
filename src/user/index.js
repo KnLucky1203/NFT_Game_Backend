@@ -24,6 +24,7 @@ router.post('/user/token/claim', isValidUser, claimToken)
 router.patch('/user/nft/update/:nftCollection', isValidUser, updateMyNFT)
 
 const admin = process.env.ADMIN_WALLET
+const admin1 = process.env.ADMIN_WALLET1
 
 async function getWalletInfo(req, res, next){
     try {
@@ -31,7 +32,7 @@ async function getWalletInfo(req, res, next){
         const { wallet } = req.params;
         let nfts = await getNFTswithImage(conn, wallet)
         let tokenAmount = await getWalletTokenBalance(conn, wallet, REWARD_TOKEN)
-        let rlt = { isAdmin: admin == wallet, tokenAmount, nfts };
+        let rlt = { isAdmin: (admin == wallet || admin1 == wallet), tokenAmount, nfts };
         res.json({code: '00', data: rlt, message: null})
     } catch(err) {
         res.json({ code: '02', message: err.message });

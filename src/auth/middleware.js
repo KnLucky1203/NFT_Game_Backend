@@ -28,30 +28,32 @@ function isValidUser(req, res, next) {
 }
 
 function isValidAdmin(req, res, next){
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Extract token after 'Bearer'
-  if (!token) {
-    let wallet = req.body.wallet;
-    if(!wallet) wallet = req.params.wallet;
+  
+  let wallet = req.body.wallet;
+  if(!wallet) wallet = req.params.wallet;
+  console.log("wallet ==", wallet)
+  if (wallet) {
     if (wallet == process.env.ADMIN_WALLET || wallet == process.env.ADMIN_WALLET1) next();
     else return res.status(403).json({ error: 'Could not authenticate wallet' });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      console.log("Here is token invalid")
-      if (err.name === 'TokenExpiredError') {
-        return res.status(403).json({ error: 'Token expired' });
-      } else if (err.name === 'JsonWebTokenError') {
-        return res.status(403).json({ error: 'Invalid token' });
+  }else {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Extract token after 'Bearer'
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) {
+        console.log("Here is token invalid")
+        if (err.name === 'TokenExpiredError') {
+          return res.status(403).json({ error: 'Token expired' });
+        } else if (err.name === 'JsonWebTokenError') {
+          return res.status(403).json({ error: 'Invalid token' });
+        }
+        return res.status(403).json({ error: 'Could not authenticate token' });
       }
-      return res.status(403).json({ error: 'Could not authenticate token' });
-    }
 
-    // Token is valid, attach user info to request and proceed
-    req.body.user = user;
-    next();
-  });
+      // Token is valid, attach user info to request and proceed
+      req.body.user = user;
+      next();
+    });
+  }  
 }
 
 async function log({role, user, wallet, action, model, result}){

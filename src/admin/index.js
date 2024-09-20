@@ -17,8 +17,8 @@ const conn = web3.connection;
 
 router.get('/admin/dashboard/data/:wallet', isValidAdmin, getDashboardData)
 
-router.post('/admin/reward/rate', isValidAdmin, setRewardRate)
-// router.patch('/admin/reward/rate', isValidAdmin, updateRewardRate)
+// router.post('/admin/reward/rate', isValidAdmin, setRewardRate)
+router.patch('/admin/reward/rate', isValidAdmin, updateRewardRate)
 
 router.post('/admin/character/add', isValidAdmin, createCharacter)
 router.post('/admin/character/update', isValidAdmin, updateCharacter)
@@ -61,13 +61,14 @@ async function getDashboardData(req, res, next){
     }
 }
 
-async function setRewardRate(req, res, next) {
+async function updateRewardRate(req, res, next) {
     try {
         await validator.setRewardRate(req);
-        const user = req.body.user;
+        const user = req?.body?.user;
         const {rate, mode, wallet} = req.body;
-        let reward = Reward.findOne({mode: "PVE"})
+        let reward = await Reward.findOne({mode: "PVE"})
         if(reward){
+            console.log("here"); 
             reward.rate = rate;
             await reward.save();
         }else{
@@ -76,10 +77,9 @@ async function setRewardRate(req, res, next) {
             });
             await reward.save();
         }
-        
         log({
             role: "admin",
-            user: user.id, 
+            user: user?.id, 
             wallet, 
             action: "setRewardRate", 
             model: "Reward", 
@@ -161,7 +161,7 @@ async function createNFT(req, res, next){
         }
         log({
             role: "admin",
-            user: user.id, 
+            user: user?.id, 
             wallet, 
             action: "createNFT", 
             model: "NFT", 
@@ -187,7 +187,7 @@ async function updateNFT(req, res, next){
         }
         log({
             role: "admin",
-            user: user.id, 
+            user: user?.id, 
             wallet, 
             action: "updateNFT", 
             model: "NFT", 
@@ -206,7 +206,7 @@ async function deleteNFT(req, res, next){
         let nft = await NFT.findByIdAndDelete(nftId)
         log({
             role: "admin",
-            user: user.id, 
+            user: user?.id, 
             wallet, 
             action: "deleteNFT", 
             model: "NFT", 
