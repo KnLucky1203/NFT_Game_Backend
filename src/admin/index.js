@@ -11,17 +11,17 @@ const { Reward } = require("../base/reward.model");
 const { Character } = require("../base/character.model");
 const validator = require("./admin.validator");
 const { ObjectId } = require('../base/BaseSchema');
-const { isValidAdmin } = require('../auth/middleware');
+const { isValidAdmin, log } = require('../auth/middleware');
 
 const conn = web3.connection;
 
 router.get('/admin/dashboard/data/:wallet', isValidAdmin, getDashboardData)
 
-router.post('/admin/reward/rate', setRewardRate)
-router.patch('/admin/reward/rate', isValidAdmin, updateRewardRate)
+router.post('/admin/reward/rate', isValidAdmin, setRewardRate)
+// router.patch('/admin/reward/rate', isValidAdmin, updateRewardRate)
 
-router.post('/admin/character/add', createCharacter)
-router.post('/admin/character/update', updateCharacter)
+router.post('/admin/character/add', isValidAdmin, createCharacter)
+router.post('/admin/character/update', isValidAdmin, updateCharacter)
 
 // add nft token contract and character
 router.post("/admin/nft/create", isValidAdmin, createNFT)
@@ -64,37 +64,53 @@ async function getDashboardData(req, res, next){
 async function setRewardRate(req, res, next) {
     try {
         await validator.setRewardRate(req);
-        const {rate, mode} = req.body;
-        let reward = new Reward ({
-           rate, mode 
-        });
-        await reward.save();
+        const user = req.body.user;
+        const {rate, mode, wallet} = req.body;
+        let reward = Reward.findOne({mode: "PVE"})
+        if(reward){
+            reward.rate = rate;
+            await reward.save();
+        }else{
+            reward = new Reward ({
+                rate, mode 
+            });
+            await reward.save();
+        }
+        
+        log({
+            role: "admin",
+            user: user.id, 
+            wallet, 
+            action: "setRewardRate", 
+            model: "Reward", 
+            result: `Setted reward : ${rate}`
+        })
         res.json({ code: '00', data: reward, message: null})
     } catch (error) {
         res.json({ code: '02', message: error.message});
     }
 }
 
-async function updateRewardRate(req, res, next) {
-    try {
-        const { rate, mode, id } = req.body;
-        let rateData;
-        if(id){
-            rateData = await Reward.findById(id);
-            rateData.rate = rate
-            await rateData.save()
-        }else{
-            rateData = new Reward({
-                rate: rate,
-                mode: "PVE",
-            })
-            await rateData.save();
-        }
-        res.json({ code: '00', data: rateData, message: null})
-    } catch (error) {
-        res.json({ code: '03', message: error.message})
-    }
-}
+// async function updateRewardRate(req, res, next) {
+//     try {
+//         const { rate, mode, id } = req.body;
+//         let rateData;
+//         if(id){
+//             rateData = await Reward.findById(id);
+//             rateData.rate = rate
+//             await rateData.save()
+//         }else{
+//             rateData = new Reward({
+//                 rate: rate,
+//                 mode: "PVE",
+//             })
+//             await rateData.save();
+//         }
+//         res.json({ code: '00', data: rateData, message: null})
+//     } catch (error) {
+//         res.json({ code: '03', message: error.message})
+//     }
+// }
 
 async function createCharacter(req, res, next) {
     try{
@@ -129,7 +145,8 @@ async function updateCharacter(req, res, next) {
 
 async function createNFT(req, res, next){
     try {
-        const { nftMintAddress, character } = req.body;
+        const { nftMintAddress, character, wallet } = req.body;
+        const user = req.body.user
         let nft = new NFT({
             address: nftMintAddress,
             character: character,
@@ -142,6 +159,14 @@ async function createNFT(req, res, next){
             character: nft.character, 
             image: nftMeta?.json?.image
         }
+        log({
+            role: "admin",
+            user: user.id, 
+            wallet, 
+            action: "createNFT", 
+            model: "NFT", 
+            result: `Created NFT : ${nft.id}, ${nft.address}`
+        })        
         res.json({ code: '00', data: nft, message: null })
     } catch (error) {
         res.json({ code: '02', message: error.message })
@@ -149,7 +174,8 @@ async function createNFT(req, res, next){
 }
 async function updateNFT(req, res, next){
     try {
-        const { nftId, character } = req.body;
+        const { nftId, character, wallet } = req.body;
+        const user = req.body.user;
         let nft = await NFT.findById(nftId)
         nft.character = [character];
         await nft.save();
@@ -159,6 +185,14 @@ async function updateNFT(req, res, next){
             address: nft.address,
             character: nft_info?.character.length > 0 ? nft_info?.character[0] : {}, 
         }
+        log({
+            role: "admin",
+            user: user.id, 
+            wallet, 
+            action: "updateNFT", 
+            model: "NFT", 
+            result: `Updated character of NFT : ${nft_info?.character.length > 0 ? nft_info?.character[0]?.name : ""}`
+        })
         res.json({ code: '00', data: result, message: null })
     } catch (error) {
         res.json({ code: '02', message: error.message })
@@ -167,8 +201,17 @@ async function updateNFT(req, res, next){
 
 async function deleteNFT(req, res, next){
     try {
-        const { nftId } = req.body;
+        const { nftId, wallet } = req.body;
+        const user = req.body.user;
         let nft = await NFT.findByIdAndDelete(nftId)
+        log({
+            role: "admin",
+            user: user.id, 
+            wallet, 
+            action: "deleteNFT", 
+            model: "NFT", 
+            result: `Deleted NFT : ${nft.id}`
+        })
         res.json({ code: '00', data: nft, message: null })
     } catch (error) {
         res.json({ code: '02', message: error.message })

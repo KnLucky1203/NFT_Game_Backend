@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const dotenv = require("dotenv")
+const { AdminLog, UserLog } = require("../base/log.model")
 dotenv.config();
 
 function isValidUser(req, res, next) {
@@ -32,7 +33,7 @@ function isValidAdmin(req, res, next){
   if (!token) {
     let wallet = req.body.wallet;
     if(!wallet) wallet = req.params.wallet;
-    if (wallet == process.env.ADMIN_WALLET) next();
+    if (wallet == process.env.ADMIN_WALLET || wallet == process.env.ADMIN_WALLET1) next();
     else return res.status(403).json({ error: 'Could not authenticate wallet' });
   }
 
@@ -53,7 +54,30 @@ function isValidAdmin(req, res, next){
   });
 }
 
+async function log({role, user, wallet, action, model, result}){
+  if(role == "admin"){
+    let logData = new AdminLog({
+      model, 
+      user, 
+      wallet, 
+      action, 
+      result
+    })
+    await logData.save()
+  }else{
+    let logData = new UserLog({
+      model, 
+      user, 
+      wallet, 
+      action, 
+      result
+    })
+    await logData.save()
+  }
+}
+
 module.exports = {
     isValidUser,
     isValidAdmin,
+    log,
 }

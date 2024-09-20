@@ -10,7 +10,7 @@ const { Reward } = require("../base/reward.model")
 const service = require('./user.service')
 const validator = require('./user.validator')
 const jwt = require("jsonwebtoken")
-const { isValidUser } = require("../auth/middleware");
+const { isValidUser, log } = require("../auth/middleware");
 const { NFT } = require('../base/nft.model');
 
 const conn = web3.connection;
@@ -102,11 +102,20 @@ async function updateScoreAndClaimToken(req, res, next) {
         }else{
             // transfer token to user as a reward
             const tokenAmount = score * rate;
-            await transferToken(conn, process.env.ADMIN_PRIVATE_KEY, wallet, process.env.TOKEN_ADDRESS, tokenAmount);
+            // await transferToken(conn, process.env.ADMIN_PRIVATE_KEY, wallet, process.env.TOKEN_ADDRESS, tokenAmount);
 
             // Update user's score
             user.scores = score;
             await user.save();
+
+            log({
+                role: "user",
+                user: loginUser.id, 
+                wallet, 
+                action: "updateScoreAndClaimToken", 
+                model: "User", 
+                result: `PVE token reward amount: ${tokenAmount}`
+            })
 
             res.json({ code: '00', data: {
                 id: user.id,
@@ -126,16 +135,24 @@ async function claimToken(req, res, next) {
         const loginUser = req.body.user;
         const { wallet, score, mode } = req.body
 
-        let rate = await Reward.findOne({mode: "PVE"});
-        if(rate) rate = rate.rate;
-
+        // let rate = await Reward.findOne({mode: "PVE"});
+        // if(rate) rate = rate.rate;
+        // const tokenAmount = score * rate;
         let user = await User.findById(loginUser.id);
         
         // transfer token to user as a reward
-        const tokenAmount = score * rate;
+        const tokenAmount = score * 0.75;
         await transferToken(conn, process.env.ADMIN_PRIVATE_KEY, wallet, process.env.TOKEN_ADDRESS, tokenAmount);
 
         // Log add.............
+        log({
+            role: "user",
+            user: loginUser.id, 
+            wallet, 
+            action: "updateScoreAndClaimToken", 
+            model: "User", 
+            result: `PVP token reward amount: ${tokenAmount}`
+        })
         
         res.json({ code: '00', data: {
             id: user.id,
@@ -200,6 +217,14 @@ async function updateMyNFT(req, res, next) {
             nft: user.nft,
             character: character,
         }
+        log({
+            role: "user",
+            user: loginUser.id, 
+            wallet, 
+            action: "updateNFT", 
+            model: "User", 
+            result: `Changed character : ${character.name}`
+        })
         res.json({ code: '00', data: result, message: null })
     }catch(error){
         res.json({ code: '02', message: error.message })

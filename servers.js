@@ -166,14 +166,14 @@ io.on('connection', (socket) => {
                 console.log("Creating Room with userName : ", data.player1);
                 index = rooms.findIndex(room => room.player1 === data.player1);
 
-                
+
 
                 // MBC - This logic is for test
                 if (index != -1) {
                     // socket.emit('ROOM', { cmd: "SIGNAL_ROOM_CREATED", status : false, msg : "You already created room !" });
                     rooms.splice(index, 1);
                 }
-                console.log("create amount = ", data.amount);
+                // console.log("create amount = ", data.amount);
                 rooms.push({
                     name: socket.id,
                     player1: data.player1, player1_id: socket.id,
@@ -182,7 +182,7 @@ io.on('connection', (socket) => {
                     map: data.map,
                     score1: 0,
                     score2: 0,
-                    amount: data.amount,
+                    amount: 1,
                     deposit1: false,
                     deposit2: false,
                 });
@@ -294,14 +294,14 @@ io.on('connection', (socket) => {
                 // Find the room index in the array
                 index = rooms.findIndex(room => room.player1_id === socket.id);
                 if (index !== -1) {
-                    if (rooms[index].player2_id!=undefined) {
+                    if (rooms[index].player2_id != undefined) {
                         const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
                         otherPlayer.emit('ROOM', { cmd: "ROOM_CLOSED", msg: data.name + " is Closed!" });
-                        }
+                    }
                     rooms.splice(index, 1);
-                    
+
                 }
-                
+
                 break;
             case "GET_SERVERS":
                 const ret_servers = [];
@@ -319,7 +319,7 @@ io.on('connection', (socket) => {
                 console.log("GET_AMOUNT index=", index);
                 console.log("rooms: ", rooms);
                 console.log("data.name: ", data.name);
-                if (index!=-1)
+                if (index != -1)
                     socket.emit('ROOM', { cmd: "RETURN_AMOUNT", serverAmount: rooms[index].amount });
                 break;
             case "CLIENT_PLAY_AGAIN":
@@ -382,6 +382,25 @@ io.on('connection', (socket) => {
                 //         socket.emit("START_GAME_APPROVED", { msg: "Start Game ! OK !" });
                 //     }
                 // }
+                break;
+            case "GO_TO_DEPOSIT":
+                console.log("Request of to deposit screen___________________:", socket.id);
+                // console.log("data : ", data);
+                if (data.role == 'server') {
+                    // console.log("rooms = ", rooms);
+                    index = rooms.findIndex(room => room.name === socket.id);
+
+                    console.log("index = ", index);
+                    if (index !== -1) {
+                        console.log(data);
+                        const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
+                        // console.log("other : ", otherPlayer);
+                        if (otherPlayer) {
+                            otherPlayer.emit("ROOM", { cmd: "TO_DEPOSIT_PAGE" });
+                        }
+                        socket.emit("ROOM", { cmd: "TO_DEPOSIT_PAGE" });
+                    }
+                }
                 break;
             case "START_GAME":
                 console.log("Request of start_game___________________:", socket.id);
