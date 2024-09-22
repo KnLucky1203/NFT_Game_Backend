@@ -369,6 +369,23 @@ io.on('connection', (socket) => {
                     }
                 }
                 break;
+            case "CHAT_TEXT":
+                if (data.role == 'server') {
+                    index = rooms.findIndex(room => room.name === socket.id);
+                    if (index !== -1) {
+                        const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
+
+                        otherPlayer.emit("ROOM", { cmd: "CHAT_TEXT", text: data.text });
+                    }
+                }
+                if (data.role == 'client') {
+                    index = rooms.findIndex(room => room.player2_id === socket.id);
+                    if (index !== -1) {
+                        const otherPlayer = io.sockets.sockets.get(rooms[index].player1_id);
+                        otherPlayer.emit("ROOM", { cmd: "CHAT_TEXT", text: data.text });
+                    }
+                }
+                break;
             case "ACTION_START_GAME":
                 console.log("Request of start_game___________________:", socket.id);
                 // console.log("data : ", data);
