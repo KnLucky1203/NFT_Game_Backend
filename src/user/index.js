@@ -43,7 +43,8 @@ function parseToken(token){
     return new Promise((resolve, reject) => {
         jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) {
-            reject(err);  // Reject the promise with the error
+            // reject(err);  // Reject the promise with the error
+            resolve(null)
         } else {
             resolve(decoded);  // Resolve the promise with the decoded payload
         }
