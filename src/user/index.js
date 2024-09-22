@@ -73,8 +73,8 @@ async function getScoreList(req, res, next){
             if(loginUser){
                 console.log("Validated case ====", loginUser)
                 let myScore = await User.findById(loginUser.id)
-                let greaterPlayers = await User.find({ scores: {$gt: myScore.scores }}).sort({ scores: 1 }).limit(limit/2);
-                let smallerPlayers = await User.find({ scores: {$lt: myScore.scores }}).sort({ scores: -1 }).limit(limit/2);
+                let greaterPlayers = await User.find({ scores: {$gt: myScore.scores }}).sort({ scores: 1, name: -1 }).limit(limit/2);
+                let smallerPlayers = await User.find({ scores: {$lt: myScore.scores }}).sort({ scores: -1, name: -1 }).limit(limit/2);
                 scoreList = greaterPlayers;
                 scoreList.push(myScore)
                 scoreList = [...scoreList, ...smallerPlayers]
