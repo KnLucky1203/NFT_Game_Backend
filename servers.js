@@ -495,6 +495,7 @@ io.on('connection', (socket) => {
                         rooms[index].score1 = 0;
                         rooms[index].score2 = 0;
                     }
+                    otherPlayer.emit("ROOM", { cmd: "OTHER_PLAYER_OVER"});
                 }
                 break;
             case "PLAY_GAME":
