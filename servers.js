@@ -331,6 +331,7 @@ io.on('connection', (socket) => {
                 }
                 break;
             case "TOKEN_DEPOSITED":
+                console.log("otherCharacter = ", data.otherCharacter);
                 if (data.role == 'server') {
 
                     index = rooms.findIndex(room => room.name === socket.id);
@@ -338,7 +339,7 @@ io.on('connection', (socket) => {
                     if (index !== -1) {
                         const otherPlayer = io.sockets.sockets.get(rooms[index].player2_id);
                         rooms[index].deposit1 = true;
-                        otherPlayer.emit("ROOM", { cmd: "OTHER_DEPOSITED" });
+                        otherPlayer.emit("ROOM", { cmd: "OTHER_DEPOSITED", otherCharacter:data.otherCharacter});
                     }
                 }
                 if (data.role == 'client') {
@@ -346,7 +347,7 @@ io.on('connection', (socket) => {
                     if (index !== -1) {
                         const otherPlayer = io.sockets.sockets.get(rooms[index].player1_id);
                         rooms[index].deposit2 = true;
-                        otherPlayer.emit("ROOM", { cmd: "OTHER_DEPOSITED" });
+                        otherPlayer.emit("ROOM", { cmd: "OTHER_DEPOSITED", otherCharacter:data.otherCharacter});
                     }
                 }
                 break;
