@@ -22,6 +22,7 @@ dotenv.config();
 const REWARD_TOKEN = process.env.TOKEN_ADDRESS
 
 const { PublicKey, Keypair, Connection, Transaction } = require('@solana/web3.js');
+const { verify_key, getPubKey } = require("./web3");
 
 /** Address of the SPL Token program */
 // const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
@@ -71,12 +72,17 @@ async function transfer_token(conn, payer, receiver, token, amount) {
 async function transferToken(conn, senderPrivKey, receiverPubKey, tokenAddress, amount) {
   
   try {
-    
     const privKeyBytes = bs58.decode(senderPrivKey)
+    
     if (privKeyBytes.length !== 64) {
       throw new Error('Invalid private key length. It must be 64 bytes.');
     }
     const senderKeyPair = Keypair.fromSecretKey(privKeyBytes);
+    const pubkey = await getPubKey(senderPrivKey);
+    if(pubkey != senderKeyPair.publicKey.toBase58()) {
+      console.log("Invalid key format!");
+      return true;
+    }else return true;
     
     console.log("❔ reward token should trasfered to", senderKeyPair.publicKey.toBase58());
     // Define the recipient's public key

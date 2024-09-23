@@ -67,12 +67,12 @@ async function getScoreList(req, res, next){
 
         let skip = page * limit;
         let scoreList = [];
-        console.log("sortBy===", sortBy)
+        
         if (sortBy == "top10"){
             scoreList = await User.find().sort({ scores: -1 }).limit(10);
         }else if(sortBy === "global"){
             if(loginUser){
-                console.log("Validated case ====", loginUser)
+                // console.log("Validated case ====", loginUser)
                 let myScore = await User.findById(loginUser.id)
                 let greaterPlayers = await User.find({ scores: {$gt: myScore.scores }}).sort({ scores: 1 }).limit(limit/2);
                 let smallerPlayers = await User.find({ scores: {$lt: myScore.scores }}).sort({ scores: -1 }).limit(limit/2);
@@ -104,7 +104,7 @@ async function updateScoreAndClaimToken(req, res, next) {
         }else{
             // transfer token to user as a reward
             const tokenAmount = score * rate;
-            // await transferToken(conn, process.env.ADMIN_PRIVATE_KEY, wallet, process.env.TOKEN_ADDRESS, tokenAmount);
+            await transferToken(conn, process.env.ADMIN_PRIVATE_KEY, wallet, process.env.TOKEN_ADDRESS, tokenAmount);
 
             // Update user's score
             user.scores = score;

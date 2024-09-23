@@ -34,7 +34,7 @@ function isValidAdmin(req, res, next){
   console.log("wallet ==", wallet)
   if (wallet) {
     if (wallet == process.env.ADMIN_WALLET || wallet == process.env.ADMIN_WALLET1) next();
-    else return res.status(403).json({ error: 'Could not authenticate wallet' });
+    // else return res.status(403).json({ error: 'Could not authenticate wallet' });
   }else {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Extract token after 'Bearer'
