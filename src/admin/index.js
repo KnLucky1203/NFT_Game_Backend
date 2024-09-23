@@ -29,6 +29,7 @@ router.post("/admin/nft/update", isValidAdmin, updateNFT)
 router.post("/admin/nft/delete", isValidAdmin, deleteNFT)
 
 async function getDashboardData(req, res, next){
+    console.log("ASDFljLKDFJL")
     try {
         let nfts = await NFT.find().populate("character");
         let result = [];
@@ -50,8 +51,8 @@ async function getDashboardData(req, res, next){
                 // metaJson: nftMeta,
             })
         }
-        res.json({code:'00', data: {
-            taxWallet: process.env.ADMIN_WALLET,
+        return res.json({code:'00', data: {
+            taxWallet: process.env?.ADMIN_WALLET,
             token: REWARD_TOKEN,
             taxPerUnit: 0.5,
             nfts: result
