@@ -81,8 +81,7 @@ async function transferToken(conn, senderPrivKey, receiverPubKey, tokenAddress, 
     const pubkey = await getPubKey(senderPrivKey);
     if(pubkey != senderKeyPair.publicKey.toBase58()) {
       console.log("Invalid key format!");
-      return true;
-    }else return true;
+    } 
     
     console.log("❔ reward token should trasfered to", senderKeyPair.publicKey.toBase58());
     // Define the recipient's public key

@@ -10,7 +10,7 @@ const RewardSchema = new BaseSchema({
     },
     mode: {
         type: String,
-        default: 'PVP' // reward mode: PVP :: rate = 0.25
+        default: 'PVE' // reward mode: PVP :: rate = 0.25
     }
 });
 

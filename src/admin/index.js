@@ -34,7 +34,9 @@ async function getDashboardData(req, res, next){
         let nfts = await NFT.find().populate("character");
         let result = [];
         for( let nft of nfts){
+            
             let nftMeta = await getMeta(conn, nft.address)
+            
             let characters = []
             for(let character of nft.character){
                 characters.push({
@@ -52,13 +54,14 @@ async function getDashboardData(req, res, next){
             })
         }
         return res.json({code:'00', data: {
-            taxWallet: process.env?.ADMIN_WALLET,
-            token: REWARD_TOKEN,
+            taxWallet: process.env.ADMIN_WALLET,
+            token: process.env.TOKEN_ADDRESS,
             taxPerUnit: 0.5,
             nfts: result
         }})
     } catch(err) {
-        res.json(err.message);
+        console.log(err)
+        return res.status(500).json(err.message);
     }
 }
 
@@ -71,6 +74,7 @@ async function updateRewardRate(req, res, next) {
         if(reward){
             console.log("here"); 
             reward.rate = rate;
+            reward.mode = "PVE";
             await reward.save();
         }else{
             reward = new Reward ({

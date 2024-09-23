@@ -31,11 +31,14 @@ function isValidAdmin(req, res, next){
   
   let wallet = req.body.wallet;
   if(!wallet) wallet = req.params.wallet;
-  console.log("wallet ==", wallet)
+  let isWallet = true;
   if (wallet) {
     if (wallet == process.env.ADMIN_WALLET || wallet == process.env.ADMIN_WALLET1) next();
-    else return res.status(403).json({ error: 'Could not authenticate wallet' });
-  }else {
+    // else return res.status(403).json({ error: 'Could not authenticate wallet' });
+    else isWallet = false;
+  } 
+  if (!isWallet) {
+    
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Extract token after 'Bearer'
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
@@ -48,12 +51,12 @@ function isValidAdmin(req, res, next){
         }
         return res.status(403).json({ error: 'Could not authenticate token' });
       }
-
       // Token is valid, attach user info to request and proceed
       req.body.user = user;
       next();
     });
-  }  
+  }else  
+    return res.status(403).json({ error: 'Access forbbiden'})
 }
 
 async function log({role, user, wallet, action, model, result}){

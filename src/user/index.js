@@ -103,7 +103,9 @@ async function updateScoreAndClaimToken(req, res, next) {
             return res.json({ code: '03', data: null, message: "Is not top score" })
         }else{
             // transfer token to user as a reward
+            console.log("reward rate ===", rate)
             const tokenAmount = score * rate;
+            console.log("token Amount====", tokenAmount)
             await transferToken(conn, process.env.ADMIN_PRIVATE_KEY, wallet, process.env.TOKEN_ADDRESS, tokenAmount);
 
             // Update user's score
