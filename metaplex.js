@@ -53,7 +53,7 @@ async function getImageUrlFromMetadataUri(metadataUri) {
     // Fetch the metadata JSON
     // const response = await fetch(metadataUri);
     const response = await axios.get(metadataUri)
-    console.log("response====", response)
+    // console.log("response====", response)
     const metadata = response.data;
 
     // Extract the image URL

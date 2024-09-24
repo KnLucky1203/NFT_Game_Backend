@@ -9,6 +9,7 @@ const web3 = require("../../web3");
 const { getNFTswithImage } = require('../../metaplex');
 const conn = web3.connection;
 router.post('/auth/login', login)
+router.post('/auth/loginWithWallet', loginWallet)
 router.post('/auth/register', register)
 
 async function login(req, res, next) {
@@ -42,8 +43,8 @@ async function login(req, res, next) {
         }
 
         let nfts = await getNFTswithImage(conn, wallet)
-        
-        if(nfts.length == 0) return res.json({ code: "03", message: "You should to buy nfts to play this game."})
+
+        if (nfts.length == 0) return res.json({ code: "03", message: "You should to buy nfts to play this game." })
 
         const token = jwt.sign({ id: user._id, username: user.name, role: user.role }, process.env.JWT_SECRET, {
             noTimestamp: true,
@@ -54,9 +55,36 @@ async function login(req, res, next) {
 
     } catch (err) {
         console.log(err)
-        res.json({ code: '03', message: 'Login failed'});
+        res.json({ code: '03', message: 'Login failed' });
     }
 }
+
+async function loginWallet(req, res, next) {
+    try {
+        console.log("login ----", req.body);
+        await validator.loginWallet(req);
+
+        const { wallet } = req.body;
+
+        let user = await User.findOne({ wallet: wallet });
+        console.log("---1:", user);
+        if (!user) {
+
+            return res.json({ code: '03', data: [], message: "User not registered" });
+            console.log("---2:", user);
+        }
+        const token = jwt.sign({ id: user._id, username: user.name, role: user.role }, process.env.JWT_SECRET, {
+            noTimestamp: true,
+            expiresIn: '1h',
+        })
+        return res.json({ code: '00', token:token, username:user.name, message: "" });
+
+    } catch (err) {
+        console.log(err)
+        res.json({ code: '03', message: 'Login failed' });
+    }
+}
+
 
 async function register(req, res) {
     try {

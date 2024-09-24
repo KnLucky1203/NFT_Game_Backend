@@ -100,6 +100,7 @@ async function updateScore(req, res, next) {
         // if(rate) rate = rate.rate;
 
         let user = await User.findById(loginUser.id);
+        console.log("user=>", user)
         if (parseFloat(score) <= parseFloat(user.scores)) {
             return res.json({ code: '03', data: null, message: "Is not top score" })
         } else {
