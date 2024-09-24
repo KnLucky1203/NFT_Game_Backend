@@ -5,38 +5,56 @@ const router = express.Router()
 const jwt = require("jsonwebtoken");
 const { User } = require('../user/user.model')
 const validator = require('./auth.validator')
-
-
+const web3 = require("../../web3");
+const { getNFTswithImage } = require('../../metaplex');
+const conn = web3.connection;
 router.post('/auth/login', login)
 router.post('/auth/register', register)
 
-async function login(req, res, next){
+async function login(req, res, next) {
     try {
         console.log("login ----", req.body);
         await validator.login(req);
 
-        const { username, password } = req.body;
+        const { username, wallet } = req.body;
 
-        const user = await User.findOne({name: username});
-        
+        let user = await User.findOne({ name: username });
+        // console.log("---1:", user);
         if (!user) {
-            return res.json({ code: '03', data: [], message: "User not exist"})
+
+
+            user = new User({
+                // email,
+                name: username,
+                wallet: wallet
+            });
+            await user.save();
+            // console.log("---2:", user);
+        }
+        else {
+
+            // console.log("---3:", user);
+            // const isMatch = await user.compareWallet(wallet);
+            console.log("wallet: ", wallet);
+            console.log("user.wallet", user.wallet);
+            if (wallet != user.wallet)
+                return res.json({ code: '03', data: [], message: "User name already exist" });
         }
 
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            return res.json({ code: '03', data: [], message: "Invalid password"})
-        }
+        let nfts = await getNFTswithImage(conn, wallet)
+        
+        if(nfts.length == 0) return res.json({ code: "03", message: "You should to buy nfts to play this game."})
 
         const token = jwt.sign({ id: user._id, username: user.name, role: user.role }, process.env.JWT_SECRET, {
             noTimestamp: true,
             expiresIn: '1h',
         })
+        console.log("---4:", token);
+        res.json({ code: '00', token, message: '' })
 
-        res.json({code:'00', token, message: ''})
-
-    } catch(err) {
-        res.json(err.message);
+    } catch (err) {
+        console.log(err)
+        res.json({ code: '03', message: 'Login failed'});
     }
 }
 
@@ -64,8 +82,8 @@ async function register(req, res) {
             noTimestamp: true,
             expiresIn: '1h',
         })
-        res.json({ code:'00', token: token, message: 'User registered successfully' })
-    }catch(err) {
+        res.json({ code: '00', token: token, message: 'User registered successfully' })
+    } catch (err) {
         console.log("error:", err.message)
         res.json(err.message);
     }

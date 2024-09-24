@@ -10,9 +10,12 @@ const { NFT } = require("./nft.model");
 const { Reward } = require("../base/reward.model");
 const { Character } = require("../base/character.model");
 const validator = require("./base.validator");
+const { Social } = require('./social.model');
 const conn = web3.connection;
 
 router.get('/base/reward/rate', getRewardRate)
+
+router.get('/base/social/get', getTwitterMsg)
 router.get('/base/character', getCharacter)
 router.get('/base/nfts', getNFTs)
 router.get('/base/deposit/address', (req, res) => {
@@ -26,6 +29,7 @@ router.get('/base/deposit/address', (req, res) => {
 })
 
 async function getRewardRate(req, res, next){
+    console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@get reword");
     try {
         await validator.getRewardRate(req);
         let { mode } = req.query;
@@ -34,6 +38,23 @@ async function getRewardRate(req, res, next){
         res.json({code:'00', data: { rate: rewards?.rate, id: rewards?.id }, message: null})
     } catch(err) {
         res.json({code: '02', message: err.message});
+    }
+}
+async function getTwitterMsg(req, res, next) {
+    try {
+        console.log("$$$$$$$$$$$$$$$$$$$$$$get twitter msg");
+        let social = await Social.find()
+        let message = "";
+        if(social.length > 0){
+            message = social[0].message;
+            
+        }else{
+            message = "";
+        }
+        res.json({ code: '00', data: message, message: null})
+    } catch (error) {
+        console.log("error=", error);
+        res.json({ code: '02', message: error.message});
     }
 }
 

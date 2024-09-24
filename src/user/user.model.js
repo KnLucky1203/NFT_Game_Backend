@@ -16,7 +16,11 @@ const UserSchema = new BaseSchema({
     //     // }
     // },
     name: String,
-    password: String,
+    password: {
+        type: String,
+        default: ""
+    },
+    wallet: String,
     wallets: [ String ],
     role: {
         type: String,

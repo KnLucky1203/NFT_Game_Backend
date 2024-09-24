@@ -8,6 +8,7 @@ const web3 = require("../../web3")
 const { User } = require('../user/user.model');
 const { NFT } = require("../base/nft.model");
 const { Reward } = require("../base/reward.model");
+const { Social}= require("../base/social.model");
 const { Character } = require("../base/character.model");
 const validator = require("./admin.validator");
 const { ObjectId } = require('../base/BaseSchema');
@@ -19,6 +20,7 @@ router.get('/admin/dashboard/data/:wallet', isValidAdmin, getDashboardData)
 
 // router.post('/admin/reward/rate', isValidAdmin, setRewardRate)
 router.patch('/admin/reward/rate', isValidAdmin, updateRewardRate)
+router.patch('/admin/social/update', isValidAdmin, setTwitterMsg)
 
 router.post('/admin/character/add', isValidAdmin, createCharacter)
 router.post('/admin/character/update', isValidAdmin, updateCharacter)
@@ -95,6 +97,70 @@ async function updateRewardRate(req, res, next) {
         res.json({ code: '02', message: error.message});
     }
 }
+
+async function setTwitterMsg(req, res, next) {
+    try {
+        console.log("settwiter");
+        const user = req?.body?.user;
+        const {msg, wallet} = req.body;
+        let twitter = await Social.findOne({})
+        console.log("tt = ",twitter);
+        if(twitter){
+            console.log("here2"); 
+            twitter.message = msg;
+            await twitter.save();
+        }else{
+            twitter = new Social ({
+                msg
+            });
+            await twitter.save();
+        }
+        log({
+            role: "admin",
+            user: user?.id, 
+            wallet, 
+            action: "setTwitterMsg", 
+            model: "Social", 
+            result: `Setted Social : ${msg}`
+        })
+        res.json({ code: '00', data: msg, message: null})
+    } catch (error) {
+        console.log(error)
+        res.json({ code: '02', message: error.message});
+    }
+}
+
+async function updateRewardRate(req, res, next) {
+    try {
+        await validator.setRewardRate(req);
+        const user = req?.body?.user;
+        const {rate, mode, wallet} = req.body;
+        let reward = await Reward.findOne({mode: "PVE"})
+        if(reward){
+            console.log("here"); 
+            reward.rate = rate;
+            reward.mode = "PVE";
+            await reward.save();
+        }else{
+            reward = new Reward ({
+                rate, mode 
+            });
+            await reward.save();
+        }
+        log({
+            role: "admin",
+            user: user?.id, 
+            wallet, 
+            action: "setRewardRate", 
+            model: "Reward", 
+            result: `Setted reward : ${rate}`
+        })
+        res.json({ code: '00', data: reward, message: null})
+    } catch (error) {
+        res.json({ code: '02', message: error.message});
+    }
+}
+
 
 // async function updateRewardRate(req, res, next) {
 //     try {

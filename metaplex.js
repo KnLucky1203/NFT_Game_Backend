@@ -1,5 +1,6 @@
 const { Metaplex } = require("@metaplex-foundation/js");
 const { Connection, PublicKey } = require("@solana/web3.js");
+const axios = require("axios");
 
 // Connect to the Solana network
 // const conn = new Connection("https://mainnet.helius-rpc.com/?api-key=b37551ba-445e-4ad2-82d5-404918c03cc8");
@@ -50,8 +51,10 @@ async function getMeta(conn, token) {
 async function getImageUrlFromMetadataUri(metadataUri) {
   try {
     // Fetch the metadata JSON
-    const response = await fetch(metadataUri);
-    const metadata = await response.json();
+    // const response = await fetch(metadataUri);
+    const response = await axios.get(metadataUri)
+    console.log("response====", response)
+    const metadata = response.data;
 
     // Extract the image URL
     const imageUrl = metadata.image;

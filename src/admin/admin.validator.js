@@ -9,3 +9,9 @@ async function setRewardRate(req) {
     if (!isFinite(rate))
         throw { code: '02', message: "rate must be number"}
 }
+
+async function setSocialMsg(req) {
+    const { msg} = req.body;
+    if (rate === undefined || rate === "")
+        throw {code: '02', message: "message is null"}
+}
