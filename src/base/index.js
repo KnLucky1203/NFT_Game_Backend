@@ -29,7 +29,7 @@ router.get('/base/deposit/address', (req, res) => {
 })
 
 async function getRewardRate(req, res, next){
-    console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@get reword");
+    // console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@get reword");
     try {
         await validator.getRewardRate(req);
         let { mode } = req.query;
@@ -42,7 +42,7 @@ async function getRewardRate(req, res, next){
 }
 async function getTwitterMsg(req, res, next) {
     try {
-        console.log("$$$$$$$$$$$$$$$$$$$$$$get twitter msg");
+        // console.log("$$$$$$$$$$$$$$$$$$$$$$get twitter msg");
         let social = await Social.find()
         let message = "";
         if(social.length > 0){
